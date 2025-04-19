@@ -1,0 +1,385 @@
+const audio = document.getElementById('audio');
+const playPauseBtn = document.querySelector('.playpause-track');
+const progressBar = document.querySelector('.seek-slider');
+const currentTimeEl = document.querySelector('.current-time');
+const totalDurationEl = document.querySelector('.total-duration');
+const volumeSlider = document.querySelector('.volume-slider');
+const volumeIcon = document.querySelector('.volume-icon');
+const visualizer = document.getElementById('visualizer');
+const trackName = document.querySelector('.track-name');
+const artistName = document.querySelector('.artist-name');
+
+let previousVolume = 1;
+let isCasinoMode = false;
+let isPlaying = false;
+let updateTimer;
+
+const musicPaths = {
+    normal: 'narr/Default-theme.mp3',
+    casino: 'narr/Casino-theme.mp3'
+};
+
+audio.loop = true;
+audio.autoplay = true;
+
+const soundEffects = {
+    click: new Audio('visuals/sound/effects/click.wav'),
+    switch: new Audio('visuals/sound/effects/switch.wav')
+};
+
+const casinoThemeLink = document.createElement('link');
+casinoThemeLink.rel = 'stylesheet';
+casinoThemeLink.href = 'narr/themes/casino-theme.css';
+casinoThemeLink.disabled = true; 
+
+document.head.appendChild(casinoThemeLink);
+
+document.addEventListener('DOMContentLoaded', () => {
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    if (loadingIndicator) {
+        setTimeout(() => {
+            loadingIndicator.style.display = 'none';
+            playMusic();
+        }, 1500);
+    } else {
+        playMusic();
+    }
+});
+
+const soundToggle = document.getElementById('soundToggle');
+if (soundToggle) {
+    soundToggle.addEventListener('click', () => {
+        if (soundEffects.click) {
+            soundEffects.click.play();
+        }
+
+        const isMuted = audio.volume > 0;
+
+        if (isMuted) {
+            soundToggle.innerHTML = '<i class="fas fa-volume-mute"></i>';
+            audio.volume = 0;
+            if (soundEffects.click) soundEffects.click.volume = 0;
+            if (soundEffects.switch) soundEffects.switch.volume = 0;
+        } else {
+            soundToggle.innerHTML = '<i class="fas fa-volume-up"></i>';
+            audio.volume = volumeSlider.value / 100;
+            if (soundEffects.click) soundEffects.click.volume = 1;
+            if (soundEffects.switch) soundEffects.switch.volume = 1;
+        }
+    });
+}
+
+function createRain() {
+    const rainContainer = document.getElementById('rainContainer');
+    if (!rainContainer) return;
+
+    const dropCount = Math.floor(window.innerWidth / 15); 
+
+    rainContainer.innerHTML = ''; 
+
+    for (let i = 0; i < dropCount; i++) {
+        const drop = document.createElement('div');
+        drop.classList.add('rain-drop');
+
+        const posX = Math.random() * window.innerWidth;
+        const delay = Math.random() * 5;
+        const duration = Math.random() * 3 + 2; 
+
+        drop.style.left = `${posX}px`;
+        drop.style.animationDuration = `${duration}s`;
+        drop.style.animationDelay = `${delay}s`;
+
+        rainContainer.appendChild(drop);
+    }
+}
+
+const themeToggle = document.getElementById('theme-toggle');
+const body = document.body;
+
+if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+        if (soundEffects.switch) {
+            soundEffects.switch.play();
+        }
+
+        isCasinoMode = !isCasinoMode;
+
+        body.classList.add('pixelate');
+        setTimeout(() => {
+            body.classList.remove('pixelate');
+        }, 800);
+
+        casinoThemeLink.disabled = !isCasinoMode;
+
+        body.classList.toggle('theme-casino', isCasinoMode);
+
+        if (isCasinoMode) {
+            if (trackName) trackName.textContent = 'Dog Casino';
+            if (artistName) artistName.textContent = 'Undertale OST';
+
+            audio.src = musicPaths.casino;
+
+            launchConfetti();
+        } else {
+            if (trackName) trackName.textContent = 'Quiet Water';
+            if (artistName) artistName.textContent = 'Undertale OST';
+
+            audio.src = musicPaths.normal;
+        }
+
+        audio.loop = true;
+
+        if (isPlaying) {
+            audio.play();
+        }
+
+        createRain(); 
+        updateVisualizer(); 
+    });
+}
+
+function launchConfetti() {
+    if (typeof confetti === 'undefined') {
+        console.log("Confetti library not available");
+        return;
+    }
+
+    const duration = 5000; 
+    const animationEnd = Date.now() + duration;
+    const defaults = {
+        startVelocity: 50, 
+        spread: 360,
+        ticks: 100, 
+        zIndex: 0
+    };
+
+    function randomInRange(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+
+    const interval = setInterval(function() {
+        const timeLeft = animationEnd - Date.now();
+        if (timeLeft <= 0) {
+            return clearInterval(interval);
+        }
+
+        const particleCount = 100 * (timeLeft / duration); 
+
+        for (let i = 0; i < 3; i++) {
+            confetti({
+                ...defaults,
+                particleCount: particleCount / 3,
+                origin: { x: randomInRange(0.1, 0.9), y: randomInRange(0, 0.3) },
+                colors: ['#FFD700', '#FFFF00', '#FF5555', '#FFFFFF', '#ff7124', '#43256E'],
+                scalar: randomInRange(0.8, 1.5),
+                shapes: ['square', 'circle']
+            });
+        }
+    }, 150); 
+
+    setTimeout(() => {
+        confetti({
+            particleCount: 40,
+            spread: 70,
+            origin: { y: 0.6 },
+            gravity: 1,
+            scalar: 2,
+            colors: ['#FFD700', '#FF5555']
+        });
+    }, 1000);
+}
+
+function formatTime(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes < 10 ? '0' + minutes : minutes}:${remainingSeconds < 10 ? '0' + remainingSeconds : remainingSeconds}`;
+}
+
+function createVisualizer() {
+    if (!visualizer) return;
+
+    visualizer.innerHTML = '';
+    for (let i = 0; i < 20; i++) {
+        const bar = document.createElement('div');
+        bar.classList.add('bar');
+        bar.style.height = `${Math.floor(Math.random() * 20) + 5}px`;
+        visualizer.appendChild(bar);
+    }
+}
+
+function updateVisualizer() {
+    if (!visualizer || !isPlaying) return;
+
+    const bars = visualizer.querySelectorAll('.bar');
+    bars.forEach(bar => {
+        const height = Math.floor(Math.random() * 25) + 5;
+        bar.style.height = `${height}px`;
+    });
+
+    requestAnimationFrame(updateVisualizer);
+}
+
+function playMusic() {
+    isPlaying = true;
+    if (playPauseBtn) {
+        playPauseBtn.innerHTML = '<i class="fa fa-pause"></i>';
+    }
+
+    audio.play();
+    updateTimer = setInterval(updateTrackTime, 1000);
+    updateVisualizer();
+}
+
+function pauseMusic() {
+    isPlaying = false;
+    if (playPauseBtn) {
+        playPauseBtn.innerHTML = '<i class="fa fa-play"></i>';
+    }
+
+    audio.pause();
+    clearInterval(updateTimer);
+}
+
+function updateTrackTime() {
+    if (!audio || isNaN(audio.duration)) return;
+
+    const currentMinutes = Math.floor(audio.currentTime / 60);
+    const currentSeconds = Math.floor(audio.currentTime - currentMinutes * 60);
+    const durationMinutes = Math.floor(audio.duration / 60);
+    const durationSeconds = Math.floor(audio.duration - durationMinutes * 60);
+
+    if (currentTimeEl) {
+        currentTimeEl.textContent = `${currentMinutes < 10 ? '0' + currentMinutes : currentMinutes}:${currentSeconds < 10 ? '0' + currentSeconds : currentSeconds}`;
+    }
+
+    if (totalDurationEl) {
+        totalDurationEl.textContent = `${durationMinutes < 10 ? '0' + durationMinutes : durationMinutes}:${durationSeconds < 10 ? '0' + durationSeconds : durationSeconds}`;
+    }
+
+    if (progressBar) {
+        progressBar.value = (audio.currentTime / audio.duration) * 100;
+    }
+}
+
+if (playPauseBtn) {
+    playPauseBtn.addEventListener('click', () => {
+        if (soundEffects.click) {
+            soundEffects.click.play();
+        }
+
+        if (isPlaying) {
+            pauseMusic();
+        } else {
+            playMusic();
+        }
+    });
+}
+
+if (progressBar) {
+    progressBar.addEventListener('input', () => {
+        const seekTo = audio.duration * (progressBar.value / 100);
+        audio.currentTime = seekTo;
+    });
+}
+
+if (volumeSlider) {
+    volumeSlider.addEventListener('input', () => {
+        audio.volume = volumeSlider.value / 100;
+    });
+}
+
+const prevBtn = document.querySelector('.prev-track');
+if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+        if (soundEffects.click) {
+            soundEffects.click.play();
+        }
+        audio.currentTime = 0;
+    });
+}
+
+const nextBtn = document.querySelector('.next-track');
+if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+        if (soundEffects.click) {
+            soundEffects.click.play();
+        }
+        audio.currentTime = 0;
+    });
+}
+
+document.querySelectorAll('a, button, .character-card, .gallery-item').forEach(element => {
+    element.addEventListener('click', () => {
+        if (soundEffects.click) {
+            soundEffects.click.cloneNode(true).play();
+        }
+    });
+});
+
+audio.addEventListener('play', () => {
+    isPlaying = true;
+    if (playPauseBtn) {
+        playPauseBtn.innerHTML = '<i class="fa fa-pause"></i>';
+    }
+});
+
+audio.addEventListener('pause', () => {
+    isPlaying = false;
+    if (playPauseBtn) {
+        playPauseBtn.innerHTML = '<i class="fa fa-play"></i>';
+    }
+});
+
+audio.volume = volumeSlider ? volumeSlider.value / 100 : 0.5;
+
+window.addEventListener('load', () => {
+
+    createRain();
+
+    createVisualizer();
+
+    audio.src = musicPaths.normal;
+
+    if (localStorage.getItem('casinoMode') === 'true') {
+
+        if (themeToggle) {
+            themeToggle.click();
+        }
+    }
+
+    if (isPlaying) {
+        playMusic();
+    }
+});
+
+if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+        localStorage.setItem('casinoMode', isCasinoMode);
+    });
+}
+
+window.addEventListener('resize', createRain);
+
+document.querySelectorAll('.gallery-item').forEach(item => {
+    item.addEventListener('click', function() {
+
+        const overlay = document.createElement('div');
+        overlay.classList.add('gallery-overlay');
+        document.body.appendChild(overlay);
+
+        const closeButton = document.createElement('button');
+        closeButton.classList.add('close-gallery');
+        closeButton.innerHTML = '&times;';
+        document.body.appendChild(closeButton);
+
+        this.classList.add('expanded');
+
+        const closeGallery = () => {
+            this.classList.remove('expanded');
+            overlay.remove();
+            closeButton.remove();
+        };
+        closeButton.addEventListener('click', closeGallery);
+        overlay.addEventListener('click', closeGallery);
+    });
+});
