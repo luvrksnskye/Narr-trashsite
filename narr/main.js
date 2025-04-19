@@ -23,7 +23,7 @@ audio.loop = true;
 audio.autoplay = true;
 
 const soundEffects = {
-    click: new Audio('visuals/sound/effects/click.wav'),
+    click: new Audio('visuals/sound/effects/snd_tempbell.wav'),
     switch: new Audio('visuals/sound/effects/switch.wav')
 };
 
