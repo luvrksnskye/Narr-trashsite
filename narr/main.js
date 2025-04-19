@@ -34,8 +34,126 @@ casinoThemeLink.disabled = true;
 
 document.head.appendChild(casinoThemeLink);
 
+function addRainStyles() {
+    const style = document.createElement('style');
+    style.textContent = `
+        #rainContainer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .rain {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .rain.back-row {
+            z-index: -1;
+            opacity: 0.5;
+        }
+
+        .drop {
+            position: absolute;
+            width: 15px;
+            height: 120px;
+            pointer-events: none;
+            animation: drop linear infinite;
+        }
+
+        .stem {
+            width: 1px;
+            height: 60%;
+            margin-left: 7px;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.25));
+            animation: stem linear infinite;
+        }
+
+        .splat {
+            width: 15px;
+            height: 10px;
+            border-top: 2px dotted rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            opacity: 1;
+            transform: scale(0);
+            animation: splat linear infinite;
+        }
+
+        @keyframes drop {
+            0% {
+                transform: translateY(-120px);
+            }
+            75% {
+                transform: translateY(0px);
+            }
+            100% {
+                transform: translateY(20px);
+            }
+        }
+
+        @keyframes stem {
+            0% {
+                opacity: 1;
+            }
+            65% {
+                opacity: 1;
+            }
+            75% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 0;
+            }
+        }
+
+        @keyframes splat {
+            0% {
+                opacity: 1;
+                transform: scale(0);
+            }
+            80% {
+                opacity: 1;
+                transform: scale(0);
+            }
+            90% {
+                opacity: 0.5;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(1.5);
+            }
+        }
+
+        .theme-casino .stem {
+            background: linear-gradient(to bottom, rgba(255, 215, 0, 0), rgba(255, 215, 0, 0.25));
+        }
+
+        .theme-casino .splat {
+            border-top: 2px dotted rgba(255, 215, 0, 0.5);
+        }
+    `;
+
+    document.head.appendChild(style);
+}
+
+addRainStyles();
+
 document.addEventListener('DOMContentLoaded', () => {
     const loadingIndicator = document.getElementById('loadingIndicator');
+
+    if (!document.getElementById('rainContainer')) {
+        const rainContainer = document.createElement('div');
+        rainContainer.id = 'rainContainer';
+        document.body.appendChild(rainContainer);
+    }
+
     if (loadingIndicator) {
         setTimeout(() => {
             loadingIndicator.style.display = 'none';
@@ -73,24 +191,41 @@ function createRain() {
     const rainContainer = document.getElementById('rainContainer');
     if (!rainContainer) return;
 
-    const dropCount = Math.floor(window.innerWidth / 15); 
+    rainContainer.innerHTML = '';
 
-    rainContainer.innerHTML = ''; 
+    let frontRow = document.createElement('div');
+    frontRow.className = 'rain front-row';
+    rainContainer.appendChild(frontRow);
 
-    for (let i = 0; i < dropCount; i++) {
-        const drop = document.createElement('div');
-        drop.classList.add('rain-drop');
+    let backRow = document.createElement('div');
+    backRow.className = 'rain back-row';
+    rainContainer.appendChild(backRow);
 
-        const posX = Math.random() * window.innerWidth;
-        const delay = Math.random() * 5;
-        const duration = Math.random() * 3 + 2; 
+    let increment = 0;
+    let drops = "";
+    let backDrops = "";
 
-        drop.style.left = `${posX}px`;
-        drop.style.animationDuration = `${duration}s`;
-        drop.style.animationDelay = `${delay}s`;
+    while (increment < 100) {
 
-        rainContainer.appendChild(drop);
+        const randoHundo = Math.floor(Math.random() * (98 - 1 + 1) + 1);
+
+        const randoFiver = Math.floor(Math.random() * (5 - 2 + 1) + 2);
+
+        increment += randoFiver;
+
+        drops += `<div class="drop" style="left: ${increment}%; bottom: ${(randoFiver + randoFiver - 1 + 100)}%; animation-delay: 0.${randoHundo}s; animation-duration: 0.5${randoHundo}s;">
+                    <div class="stem" style="animation-delay: 0.${randoHundo}s; animation-duration: 0.5${randoHundo}s;"></div>
+                    <div class="splat" style="animation-delay: 0.${randoHundo}s; animation-duration: 0.5${randoHundo}s;"></div>
+                  </div>`;
+
+        backDrops += `<div class="drop" style="right: ${increment}%; bottom: ${(randoFiver + randoFiver - 1 + 100)}%; animation-delay: 0.${randoHundo}s; animation-duration: 0.5${randoHundo}s;">
+                        <div class="stem" style="animation-delay: 0.${randoHundo}s; animation-duration: 0.5${randoHundo}s;"></div>
+                        <div class="splat" style="animation-delay: 0.${randoHundo}s; animation-duration: 0.5${randoHundo}s;"></div>
+                      </div>`;
     }
+
+    frontRow.innerHTML = drops;
+    backRow.innerHTML = backDrops;
 }
 
 const themeToggle = document.getElementById('theme-toggle');
@@ -334,14 +469,18 @@ audio.volume = volumeSlider ? volumeSlider.value / 100 : 0.5;
 
 window.addEventListener('load', () => {
 
-    createRain();
+    if (!document.getElementById('rainContainer')) {
+        const rainContainer = document.createElement('div');
+        rainContainer.id = 'rainContainer';
+        document.body.appendChild(rainContainer);
+    }
 
+    createRain();
     createVisualizer();
 
     audio.src = musicPaths.normal;
 
     if (localStorage.getItem('casinoMode') === 'true') {
-
         if (themeToggle) {
             themeToggle.click();
         }
@@ -362,7 +501,6 @@ window.addEventListener('resize', createRain);
 
 document.querySelectorAll('.gallery-item').forEach(item => {
     item.addEventListener('click', function() {
-
         const overlay = document.createElement('div');
         overlay.classList.add('gallery-overlay');
         document.body.appendChild(overlay);
