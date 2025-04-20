@@ -23,8 +23,7 @@ audio.loop = true;
 audio.autoplay = true;
 
 const soundEffects = {
-    click: new Audio('visuals/sound/effects/snd_tempbell.wav'),
-    switch: new Audio('visuals/sound/effects/switch.wav'),
+    click: new Audio('visuals/sound-effects/undertale-select-sound.mp3'),
     select: new Audio('narr/visuals/sound-effects/snd_tempbell.wav')
 };
 
@@ -72,13 +71,11 @@ if (soundToggle) {
             soundToggle.innerHTML = '<i class="fas fa-volume-mute"></i>';
             audio.volume = 0;
             if (soundEffects.click) soundEffects.click.volume = 0;
-            if (soundEffects.switch) soundEffects.switch.volume = 0;
             if (soundEffects.select) soundEffects.select.volume = 0;
         } else {
             soundToggle.innerHTML = '<i class="fas fa-volume-up"></i>';
             audio.volume = volumeSlider.value / 100;
             if (soundEffects.click) soundEffects.click.volume = 1;
-            if (soundEffects.switch) soundEffects.switch.volume = 1;
             if (soundEffects.select) soundEffects.select.volume = 1;
         }
     });
