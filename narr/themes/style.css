@@ -527,32 +527,6 @@
     border-color: var(--highlight-color);
   }
 
-  /* Loading indicator */
-  .loading-indicator {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: rgba(0, 0, 0, 0.7);
-    z-index: 9999;
-  }
-
-  .loading-pixel {
-    width: 50px;
-    height: 50px;
-    background-color: var(--primary-color);
-    animation: loadingPulse 1s infinite alternate;
-  }
-
-  @keyframes loadingPulse {
-    0% { transform: scale(1); }
-    100% { transform: scale(1.2); }
-  }
-
   .theme-casino {
     --primary-color: #FFD700;
     --highlight-color: #FF5555;

@@ -40,6 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!document.getElementById('rainContainer')) {
         const rainContainer = document.createElement('div');
         rainContainer.id = 'rainContainer';
+        rainContainer.className = 'rain-container'; 
         document.body.appendChild(rainContainer);
     }
 
@@ -50,6 +51,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 1500);
     } else {
         playMusic();
+    }
+
+    if (!isCasinoMode) {
+        createRain();
     }
 });
 
@@ -77,10 +82,20 @@ if (soundToggle) {
 }
 
 function createRain() {
-    const rainContainer = document.getElementById('rainContainer');
-    if (!rainContainer) return;
 
-    rainContainer.innerHTML = '';
+    let oldContainer = document.getElementById('rainContainer');
+    if (oldContainer) {
+        oldContainer.remove();
+    }
+
+    if (isCasinoMode) {
+        return;
+    }
+
+    const rainContainer = document.createElement('div');
+    rainContainer.id = 'rainContainer';
+    rainContainer.className = 'rain-container'; 
+    document.body.appendChild(rainContainer);
 
     let frontRow = document.createElement('div');
     frontRow.className = 'rain front-row';
@@ -94,20 +109,18 @@ function createRain() {
     let drops = "";
     let backDrops = "";
 
-    while (increment < 100) {
-
+    while (increment < 200) {
         const randoHundo = Math.floor(Math.random() * (98 - 1 + 1) + 1);
 
-        const randoFiver = Math.floor(Math.random() * (5 - 2 + 1) + 2);
-
+        const randoFiver = Math.floor(Math.random() * (3 - 1 + 1) + 1);
         increment += randoFiver;
 
-        drops += `<div class="drop" style="left: ${increment}%; bottom: ${(randoFiver + randoFiver - 1 + 100)}%; animation-delay: 0.${randoHundo}s; animation-duration: 0.5${randoHundo}s;">
+        drops += `<div class="drop" style="left: ${increment * 0.5}%; bottom: ${(randoFiver + randoFiver - 1 + 100)}%; animation-delay: 0.${randoHundo}s; animation-duration: 0.5${randoHundo}s;">
                     <div class="stem" style="animation-delay: 0.${randoHundo}s; animation-duration: 0.5${randoHundo}s;"></div>
                     <div class="splat" style="animation-delay: 0.${randoHundo}s; animation-duration: 0.5${randoHundo}s;"></div>
                   </div>`;
 
-        backDrops += `<div class="drop" style="right: ${increment}%; bottom: ${(randoFiver + randoFiver - 1 + 100)}%; animation-delay: 0.${randoHundo}s; animation-duration: 0.5${randoHundo}s;">
+        backDrops += `<div class="drop" style="right: ${increment * 0.5}%; bottom: ${(randoFiver + randoFiver - 1 + 100)}%; animation-delay: 0.${randoHundo}s; animation-duration: 0.5${randoHundo}s;">
                         <div class="stem" style="animation-delay: 0.${randoHundo}s; animation-duration: 0.5${randoHundo}s;"></div>
                         <div class="splat" style="animation-delay: 0.${randoHundo}s; animation-duration: 0.5${randoHundo}s;"></div>
                       </div>`;
@@ -144,11 +157,18 @@ if (themeToggle) {
             audio.src = musicPaths.casino;
 
             launchConfetti();
+
+            const rainContainer = document.getElementById('rainContainer');
+            if (rainContainer) {
+                rainContainer.remove();
+            }
         } else {
             if (trackName) trackName.textContent = 'Quiet Water';
             if (artistName) artistName.textContent = 'Undertale OST';
 
             audio.src = musicPaths.normal;
+
+            createRain();
         }
 
         audio.loop = true;
@@ -157,7 +177,6 @@ if (themeToggle) {
             audio.play();
         }
 
-        createRain(); 
         updateVisualizer(); 
     });
 }
@@ -357,14 +376,14 @@ audio.addEventListener('pause', () => {
 audio.volume = volumeSlider ? volumeSlider.value / 100 : 0.5;
 
 window.addEventListener('load', () => {
-
-    if (!document.getElementById('rainContainer')) {
+    if (!document.getElementById('rainContainer') && !isCasinoMode) {
         const rainContainer = document.createElement('div');
         rainContainer.id = 'rainContainer';
+        rainContainer.className = 'rain-container'; 
         document.body.appendChild(rainContainer);
+        createRain();
     }
 
-    createRain();
     createVisualizer();
 
     audio.src = musicPaths.normal;
@@ -386,7 +405,11 @@ if (themeToggle) {
     });
 }
 
-window.addEventListener('resize', createRain);
+window.addEventListener('resize', () => {
+    if (!isCasinoMode) {
+        createRain();
+    }
+});
 
 document.querySelectorAll('.gallery-item').forEach(item => {
     item.addEventListener('click', function() {
