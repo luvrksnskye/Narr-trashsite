@@ -24,7 +24,8 @@ audio.autoplay = true;
 
 const soundEffects = {
     click: new Audio('visuals/sound/effects/snd_tempbell.wav'),
-    switch: new Audio('visuals/sound/effects/switch.wav')
+    switch: new Audio('visuals/sound/effects/switch.wav'),
+    select: new Audio('narr/visuals/sound-effects/snd_tempbell.wav')
 };
 
 const casinoThemeLink = document.createElement('link');
@@ -72,11 +73,13 @@ if (soundToggle) {
             audio.volume = 0;
             if (soundEffects.click) soundEffects.click.volume = 0;
             if (soundEffects.switch) soundEffects.switch.volume = 0;
+            if (soundEffects.select) soundEffects.select.volume = 0;
         } else {
             soundToggle.innerHTML = '<i class="fas fa-volume-up"></i>';
             audio.volume = volumeSlider.value / 100;
             if (soundEffects.click) soundEffects.click.volume = 1;
             if (soundEffects.switch) soundEffects.switch.volume = 1;
+            if (soundEffects.select) soundEffects.select.volume = 1;
         }
     });
 }
@@ -138,6 +141,10 @@ if (themeToggle) {
         if (soundEffects.switch) {
             soundEffects.switch.play();
         }
+
+        const themeSwitchAudio = document.createElement('audio');
+        themeSwitchAudio.src = 'narr/visuals/sound-effects/snd_tempbell.wav';
+        themeSwitchAudio.play();
 
         isCasinoMode = !isCasinoMode;
 
@@ -351,6 +358,17 @@ if (nextBtn) {
     });
 }
 
+const navLinks = document.querySelectorAll('nav a, nav button');
+if (navLinks) {
+    navLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            if (soundEffects.select) {
+                soundEffects.select.cloneNode(true).play();
+            }
+        });
+    });
+}
+
 document.querySelectorAll('a, button, .character-card, .gallery-item').forEach(element => {
     element.addEventListener('click', () => {
         if (soundEffects.click) {
@@ -413,6 +431,11 @@ window.addEventListener('resize', () => {
 
 document.querySelectorAll('.gallery-item').forEach(item => {
     item.addEventListener('click', function() {
+
+        if (soundEffects.select) {
+            soundEffects.select.cloneNode(true).play();
+        }
+
         const overlay = document.createElement('div');
         overlay.classList.add('gallery-overlay');
         document.body.appendChild(overlay);
@@ -422,14 +445,97 @@ document.querySelectorAll('.gallery-item').forEach(item => {
         closeButton.innerHTML = '&times;';
         document.body.appendChild(closeButton);
 
+        const fullImageContainer = document.createElement('div');
+        fullImageContainer.classList.add('fullscreen-image-container');
+        document.body.appendChild(fullImageContainer);
+
+        const imgElement = this.querySelector('img');
+        if (imgElement) {
+            const fullImage = document.createElement('img');
+            fullImage.src = imgElement.src;
+            fullImage.alt = imgElement.alt || 'Gallery Image';
+            fullImage.classList.add('fullscreen-image');
+            fullImageContainer.appendChild(fullImage);
+        }
+
         this.classList.add('expanded');
 
         const closeGallery = () => {
             this.classList.remove('expanded');
             overlay.remove();
             closeButton.remove();
+            fullImageContainer.remove();
+
+            if (soundEffects.click) {
+                soundEffects.click.cloneNode(true).play();
+            }
         };
+
         closeButton.addEventListener('click', closeGallery);
         overlay.addEventListener('click', closeGallery);
+
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                closeGallery();
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+
+        overlay.addEventListener('click', () => {
+            document.removeEventListener('keydown', handleKeyDown);
+        });
     });
 });
+
+const galleryStyle = document.createElement('style');
+galleryStyle.textContent = `
+    .fullscreen-image-container {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 1001;
+        max-width: 90vw;
+        max-height: 90vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .fullscreen-image {
+        max-width: 100%;
+        max-height: 90vh;
+        object-fit: contain;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        border-radius: 4px;
+    }
+
+    .gallery-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        z-index: 1000;
+    }
+
+    .close-gallery {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        font-size: 2rem;
+        color: white;
+        background: none;
+        border: none;
+        cursor: pointer;
+        z-index: 1002;
+    }
+
+    .close-gallery:hover {
+        color: #ff5555;
+    }
+`;
+
+document.head.appendChild(galleryStyle);
